@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
+	"fmt"
 	"net"
 )
 
@@ -27,5 +29,17 @@ func readHeader(request []byte) Header {
 }
 
 func writeCorrelationId (correlationId int32, connection net.Conn){
-	connection.Write([]byte{0,0,0,0,0,0,0,byte(correlationId)})
+	messageSize := []byte{0,0,0,0}
+	buf := new(bytes.Buffer)
+
+	err := binary.Write(buf,binary.BigEndian,correlationId)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	response := append(messageSize,buf.Bytes()...)
+
+	connection.Write(response)
 }
