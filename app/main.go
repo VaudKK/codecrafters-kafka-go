@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"os"
 )
@@ -28,5 +29,18 @@ func main() {
 
 
 func handleConnection (connection net.Conn){
-	connection.Write([]byte{0,0,0,0,0,0,0,7})
+
+	buffer := make([]byte,256)
+
+	for {
+		_,err := connection.Read(buffer)
+
+		if err != nil && err == io.EOF {
+			break;
+		}
+
+		header := readHeader(buffer)
+		fmt.Println("Header:",header)
+		writeCorrelationId(header.CorrelationID,connection)
+	}
 }
