@@ -7,6 +7,10 @@ import (
 	"net"
 )
 
+const (
+	UNSUPPORTED_VERSION = int16(35)
+)
+
 type Header struct {
 	MessageSize       int32
 	RequestAPIKey     int16
@@ -28,18 +32,29 @@ func readHeader(request []byte) Header {
 	}
 }
 
-func writeCorrelationId (correlationId int32, connection net.Conn){
+func writeHeader(header Header, connection net.Conn){
 	messageSize := []byte{0,0,0,0}
 	buf := new(bytes.Buffer)
 
-	err := binary.Write(buf,binary.BigEndian,correlationId)
+	err := binary.Write(buf,binary.BigEndian,header.CorrelationID)
 
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	response := append(messageSize,buf.Bytes()...)
+	var response []byte
+
+	if header.RequestAPIVersion < 0 || header.RequestAPIVersion > 4 {
+		err = binary.Write(buf,binary.BigEndian,UNSUPPORTED_VERSION)
+		if err != nil {
+			fmt.Println(err)
+		return
+	}
+	}
+
+	response = append(messageSize,buf.Bytes()...)
+
 
 	connection.Write(response)
 }

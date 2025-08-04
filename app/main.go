@@ -41,6 +41,6 @@ func handleConnection (connection net.Conn){
 
 		header := readHeader(buffer)
 		fmt.Println("Header:",header)
-		writeCorrelationId(header.CorrelationID,connection)
+		writeHeader(header,connection)
 	}
 }
