@@ -12,6 +12,10 @@ const (
 	UNSUPPORTED_VERSION = int16(35)
 )
 
+type Numeric interface{
+	int8 | int16 | int32 | int64
+}
+
 type Header struct {
 	MessageSize       int32
 	RequestAPIKey     int16
@@ -38,40 +42,45 @@ func writeHeader(header Header, connection net.Conn){
 	buf := new(bytes.Buffer)
 
 	//write the correlation ID
-	err := binary.Write(buf,binary.BigEndian,header.CorrelationID)
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	writeBuffer(buf, header.CorrelationID)
 
 	var response []byte
 
 	// write the error code
 	if header.RequestAPIVersion < 0 || header.RequestAPIVersion > 4 {
-		err = binary.Write(buf,binary.BigEndian,UNSUPPORTED_VERSION)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		writeBuffer(buf, UNSUPPORTED_VERSION)
 	}else{
-		err = binary.Write(buf,binary.BigEndian,NO_ERROR)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
+		writeBuffer(buf,NO_ERROR)
 	}
 
-	// write api version
-	
-	err = binary.Write(buf,binary.BigEndian,int32(18))
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+	//// write api version
+
+	// one byte for api version array length + 1
+	writeBuffer(buf,int8(2))
+
+	// api key
+	writeBuffer(buf,header.RequestAPIKey)
+
+	// api min version
+	writeBuffer(buf,int16(0))
+
+	// api max version
+	writeBuffer(buf,int16(4))
+
+	// api tag
+	writeBuffer(buf,int8(0))
 	
 	response = append(messageSize,buf.Bytes()...)
 
 
 	connection.Write(response)
+}
+
+
+func writeBuffer[T Numeric](buf *bytes.Buffer,data T){
+	err := binary.Write(buf,binary.BigEndian,data)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
