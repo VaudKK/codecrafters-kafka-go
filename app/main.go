@@ -18,13 +18,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	connection, err := l.Accept()
-	if err != nil {
-		fmt.Println("Error accepting connection: ", err.Error())
-		os.Exit(1)
-	}
+	for {
+		connection, err := l.Accept()
+		if err != nil {
+			fmt.Println("Error accepting connection: ", err.Error())
+			os.Exit(1)
+		}
 
-	go handleConnection(connection)
+		go handleConnection(connection)
+	}
 }
 
 
