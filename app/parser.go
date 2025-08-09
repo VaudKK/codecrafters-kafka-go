@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	NO_ERROR = int16(0)
 	UNSUPPORTED_VERSION = int16(35)
 )
 
@@ -36,6 +37,7 @@ func writeHeader(header Header, connection net.Conn){
 	messageSize := []byte{0,0,0,0}
 	buf := new(bytes.Buffer)
 
+	//write the correlation ID
 	err := binary.Write(buf,binary.BigEndian,header.CorrelationID)
 
 	if err != nil {
@@ -45,14 +47,22 @@ func writeHeader(header Header, connection net.Conn){
 
 	var response []byte
 
+	// write the error code
 	if header.RequestAPIVersion < 0 || header.RequestAPIVersion > 4 {
 		err = binary.Write(buf,binary.BigEndian,UNSUPPORTED_VERSION)
 		if err != nil {
 			fmt.Println(err)
-		return
-	}
+			return
+		}
+	}else{
+		err = binary.Write(buf,binary.BigEndian,NO_ERROR)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 	}
 
+	
 	response = append(messageSize,buf.Bytes()...)
 
 
