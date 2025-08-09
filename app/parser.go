@@ -69,6 +69,12 @@ func writeHeader(header Header, connection net.Conn){
 	// api tag
 	writeBuffer(buf,int8(0))
 
+	// throttle time
+	writeBuffer(buf,int32(0))
+
+	// tag buffer
+	writeBuffer(buf,int8(0))
+
 	messageSize := getMessageSize(buf)
 	response = append(messageSize,buf.Bytes()...)
 

@@ -29,8 +29,9 @@ func main() {
 
 
 func handleConnection (connection net.Conn){
-	
+
 	defer connection.Close()
+	
 	buffer := make([]byte,256)
 
 	_,err := connection.Read(buffer)
