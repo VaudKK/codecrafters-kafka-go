@@ -74,8 +74,6 @@ func writeHeader(header Header, connection net.Conn){
 
 
 	connection.Write(response)
-
-	fmt.Printf("Byte response sent to client: %v\n", response)
 }
 
 

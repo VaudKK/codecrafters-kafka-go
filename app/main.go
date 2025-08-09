@@ -30,9 +30,9 @@ func main() {
 
 func handleConnection (connection net.Conn){
 
-	buffer := make([]byte,256)
-
 	for {
+		buffer := make([]byte,256)
+
 		_,err := connection.Read(buffer)
 
 		if err != nil && err == io.EOF {
@@ -40,6 +40,7 @@ func handleConnection (connection net.Conn){
 		}
 
 		header := readHeader(buffer)
+
 		fmt.Println("Header:",header)
 		writeHeader(header,connection)
 	}
