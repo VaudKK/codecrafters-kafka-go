@@ -31,18 +31,19 @@ func main() {
 func handleConnection (connection net.Conn){
 
 	defer connection.Close()
-	
-	buffer := make([]byte,256)
 
-	_,err := connection.Read(buffer)
+	for {
+		buffer := make([]byte,256)
 
-	if err != nil && err == io.EOF {
-		os.Exit(0);
+		_,err := connection.Read(buffer)
+
+		if err != nil && err == io.EOF {
+			os.Exit(0);
+		}
+
+		header := readHeader(buffer)
+
+		writeHeader(header,connection)
 	}
-
-	header := readHeader(buffer)
-
-	fmt.Println("Header:",header)
-	writeHeader(header,connection)
 	
 }
