@@ -62,6 +62,13 @@ func writeHeader(header Header, connection net.Conn){
 		}
 	}
 
+	// write api version
+	
+	err = binary.Write(buf,binary.BigEndian,int32(18))
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	
 	response = append(messageSize,buf.Bytes()...)
 
