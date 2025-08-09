@@ -31,6 +31,7 @@ func main() {
 func handleConnection (connection net.Conn){
 
 	for {
+		fmt.Println("Start.....")
 		buffer := make([]byte,256)
 
 		_,err := connection.Read(buffer)

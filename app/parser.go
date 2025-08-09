@@ -76,6 +76,14 @@ func writeHeader(header Header, connection net.Conn){
 	connection.Write(response)
 }
 
+func getMessageSize(buf *bytes.Buffer) []byte {
+	sizeBuffer := new(bytes.Buffer)
+	length := buf.Len()
+
+	writeBuffer(sizeBuffer, int32(length))
+	return sizeBuffer.Bytes()
+}
+
 
 func writeBuffer[T Numeric](buf *bytes.Buffer,data T){
 	err := binary.Write(buf,binary.BigEndian,data)
@@ -85,10 +93,3 @@ func writeBuffer[T Numeric](buf *bytes.Buffer,data T){
 	}
 }
 
-func getMessageSize(buf *bytes.Buffer) []byte {
-	sizeBuffer := new(bytes.Buffer)
-	length := buf.Len()
-
-	writeBuffer(sizeBuffer, int32(length))
-	return sizeBuffer.Bytes()
-}
