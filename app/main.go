@@ -24,7 +24,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	handleConnection(connection)
+	go handleConnection(connection)
 }
 
 
