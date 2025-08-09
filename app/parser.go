@@ -38,7 +38,6 @@ func readHeader(request []byte) Header {
 }
 
 func writeHeader(header Header, connection net.Conn){
-	messageSize := []byte{0,0,0,0}
 	buf := new(bytes.Buffer)
 
 	//write the correlation ID
@@ -69,7 +68,8 @@ func writeHeader(header Header, connection net.Conn){
 
 	// api tag
 	writeBuffer(buf,int8(0))
-	
+
+	messageSize := getMessageSize(buf)
 	response = append(messageSize,buf.Bytes()...)
 
 
@@ -85,4 +85,12 @@ func writeBuffer[T Numeric](buf *bytes.Buffer,data T){
 		fmt.Println(err)
 		return
 	}
+}
+
+func getMessageSize(buf *bytes.Buffer) []byte {
+	sizeBuffer := new(bytes.Buffer)
+	length := buf.Len()
+
+	writeBuffer(sizeBuffer, int32(length))
+	return sizeBuffer.Bytes()
 }
