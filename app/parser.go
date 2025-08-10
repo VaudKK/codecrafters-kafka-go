@@ -16,20 +16,35 @@ type Numeric interface{
 	int8 | int16 | int32 | int64
 }
 
-type Header struct {
+type KafkaRequestHeader struct {
 	MessageSize       int32
 	RequestAPIKey     int16
 	RequestAPIVersion int16
 	CorrelationID     int32
 }
 
-func readHeader(request []byte) Header {
+type KafkaResponse struct {
+	CorrelationID int32
+	ErrorCode int16
+	APIVersions []APIVersion
+	ThrottleTime int32
+	TagBuffer int8
+}
+
+type APIVersion struct {
+	APIKey int16
+	MinVersion int16
+	MaxVersion int16
+	TagBuffer int8
+}
+
+func readHeader(request []byte) KafkaRequestHeader {
 	size := request[:4]
 	apiKey := request[4:6]
 	version := request[6:8]
 	correlationId := request[8:12]
 
-	return Header{
+	return KafkaRequestHeader{
 		MessageSize: int32(binary.BigEndian.Uint32(size)),
 		RequestAPIKey: int16(binary.BigEndian.Uint16(apiKey)),
 		RequestAPIVersion: int16(binary.BigEndian.Uint16(version)),
@@ -37,49 +52,44 @@ func readHeader(request []byte) Header {
 	}
 }
 
-func writeHeader(header Header, connection net.Conn){
-	buf := new(bytes.Buffer)
+func writeHeader(header KafkaRequestHeader, connection net.Conn){
 
-	//write the correlation ID
-	writeBuffer(buf, header.CorrelationID)
-
-	var response []byte
-
-	// write the error code
-	if header.RequestAPIVersion < 0 || header.RequestAPIVersion > 4 {
-		writeBuffer(buf, UNSUPPORTED_VERSION)
-	}else{
-		writeBuffer(buf,NO_ERROR)
+	response := KafkaResponse{
+		CorrelationID: header.CorrelationID,
+		ThrottleTime: int32(0),
+		TagBuffer: int8(0),
 	}
 
-	//// write api version
+	if header.RequestAPIVersion < 0 || header.RequestAPIVersion > 4 {
+		response.ErrorCode =  UNSUPPORTED_VERSION
+	}else{
+		response.ErrorCode = NO_ERROR
+	}
 
-	// one byte for api version array length + 1
-	writeBuffer(buf,int8(2))
+	apiVersions := make([]APIVersion, 0)
 
-	// api key
-	writeBuffer(buf,header.RequestAPIKey)
+	apiVersion := APIVersion{
+		APIKey: header.RequestAPIKey,
+		MinVersion: int16(0),
+		MaxVersion: int16(4),
+		TagBuffer: int8(0),
+	}
 
-	// api min version
-	writeBuffer(buf,int16(0))
+	apiDescribeToPartition := APIVersion{
+		APIKey: int16(75),
+		MinVersion: int16(0),
+		MaxVersion: int16(0),
+		TagBuffer: int8(0),
+	}
 
-	// api max version
-	writeBuffer(buf,int16(4))
+	apiVersions = append(apiVersions, apiVersion)
+	apiVersions = append(apiVersions, apiDescribeToPartition)
 
-	// api tag
-	writeBuffer(buf,int8(0))
+	response.APIVersions = apiVersions
+	
+	resp := convertResponseHeaderToBytes(response)
 
-	// throttle time
-	writeBuffer(buf,int32(0))
-
-	// tag buffer
-	writeBuffer(buf,int8(0))
-
-	messageSize := getMessageSize(buf)
-	response = append(messageSize,buf.Bytes()...)
-
-
-	connection.Write(response)
+	connection.Write(resp)
 }
 
 func getMessageSize(buf *bytes.Buffer) []byte {
@@ -88,6 +98,37 @@ func getMessageSize(buf *bytes.Buffer) []byte {
 
 	writeBuffer(sizeBuffer, int32(length))
 	return sizeBuffer.Bytes()
+}
+
+
+func convertResponseHeaderToBytes(kafkaResponse KafkaResponse) []byte{
+	buf := new(bytes.Buffer)
+	writeBuffer(buf, kafkaResponse.CorrelationID)
+
+	var response []byte
+	writeBuffer(buf, kafkaResponse.ErrorCode)
+
+	// one byte for api version array length + 1
+	writeBuffer(buf,int8(len(kafkaResponse.APIVersions)+1))
+
+	// write api versions
+	for _, apiVersion := range kafkaResponse.APIVersions {
+		writeBuffer(buf,apiVersion.APIKey)
+		writeBuffer(buf,apiVersion.MinVersion)
+		writeBuffer(buf,apiVersion.MaxVersion)
+		writeBuffer(buf,apiVersion.TagBuffer)
+	}
+
+	// throttle time
+	writeBuffer(buf,kafkaResponse.ThrottleTime)
+
+	// tag buffer
+	writeBuffer(buf, kafkaResponse.TagBuffer)
+
+	messageSize := getMessageSize(buf)
+	response = append(messageSize,buf.Bytes()...)
+
+	return response
 }
 
 

@@ -40,7 +40,7 @@ func handleConnection (connection net.Conn){
 		_,err := connection.Read(buffer)
 
 		if err != nil && err == io.EOF {
-			os.Exit(0);
+			break;
 		}
 
 		header := readHeader(buffer)
